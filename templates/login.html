@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Flask App{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 0 auto; padding: 2rem;">
+    <div class="header" style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="color: #000000; margin-bottom: 0.5rem;">Welcome Back</h1>
+        <p style="color: #6b7280;">Sign in to your account</p>
+    </div>
+
+    <form id="login-form" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div>
+            <label for="username" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #000000;">Username</label>
+            <input type="text" id="username" name="username" required 
+                   style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.875rem; background-color: #ffffff; transition: all 0.2s ease;"
+                   placeholder="Enter your username">
+        </div>
+
+        <div>
+            <label for="password" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #000000;">Password</label>
+            <input type="password" id="password" name="password" required 
+                   style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.875rem; background-color: #ffffff; transition: all 0.2s ease;"
+                   placeholder="Enter your password">
+        </div>
+
+        <button type="submit" 
+                style="background: #000000; color: white; padding: 0.75rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; font-weight: 600; transition: all 0.2s ease; margin-top: 1rem;"
+                onmouseover="this.style.background='#622375'; this.style.transform='translateY(-1px)'"
+                onmouseout="this.style.background='#000000'; this.style.transform='translateY(0)'">
+            Sign In
+        </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 1.5rem;">
+        <p style="color: #6b7280; font-size: 0.875rem;">
+            Don't have an account? 
+            <a href="{{ url_for('auth_bp.register') }}" style="color: #000000; text-decoration: none; font-weight: 600;">Sign up</a>
+        </p>
+        <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem;">
+            <a href="{{ url_for('auth_bp.forgot_password') }}" style="color: #000000; text-decoration: none; font-weight: 600;">Forgot your password?</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    handleFormSubmit('login-form', '/auth/login', 'Login successful!');
+</script>
+{% endblock %}

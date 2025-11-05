@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Flask App{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            {% if session.user_id %}
+            <div class="user-actions">
+                <a href="{{ url_for('auth_bp.profile') }}" class="profile-link">Profile</a>
+                <a href="{{ url_for('auth_bp.logout') }}" class="logout-link"> Logout</a>
+            {% else %}
+                <a href="{{ url_for('auth_bp.login') }}" class="login-link">Login</a>
+                <a href="{{ url_for('auth_bp.register') }}" class="register-link">Register</a>
+            {% endif %}
+            </div>
+        </nav>
+    </header>
+    
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <script>
+        // Common JavaScript functions
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `${type}-toast`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('slide-out');
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+        
+        function handleFormSubmit(formId, endpoint, successMessage) {
+            const form = document.getElementById(formId);
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData);
+                    
+                    try {
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(data)
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            showToast(successMessage || result.message);
+                            if (result.redirect) {
+                                setTimeout(() => {
+                                    window.location.href = result.redirect;
+                                }, 1500);
+                            }
+                        } else {
+                            showToast(result.message, 'error');
+                        }
+                    } catch (error) {
+                        showToast('An error occurred. Please try again.', 'error');
+                    }
+                });
+            }
+        }
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
