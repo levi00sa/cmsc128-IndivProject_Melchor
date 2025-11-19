@@ -836,7 +836,7 @@ document.addEventListener("DOMContentLoaded", () => {
             placeholder.remove();
         }
 
-        // Get task ID from dataTransfer
+        // Retrieve task ID from dataTransfer
         let taskId = null;
         try {
             taskId = e.dataTransfer.getData("text/plain") || e.dataTransfer.getData("text/html");
