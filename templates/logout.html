@@ -23,11 +23,20 @@
 
 {% block scripts %}
 <script>
+    window.addEventListener('pageshow', (event) => {
+        const navEntry = performance.getEntriesByType('navigation')[0];
+        if (event.persisted || navEntry?.type === 'back_forward') {
+            forcePageReload();
+        }
+    });
+    </script>
+<script>
     {% if logged_out %}
     // Automatically redirect to login after 2 seconds
     setTimeout(() => {
         window.location.href = '/auth/login';
     }, 2000);
     {% endif %}
+
 </script>
 {% endblock %}

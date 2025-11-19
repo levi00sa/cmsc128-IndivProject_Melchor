@@ -9,6 +9,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
+    <script type="text/javascript">
+        function forcePageReload() {
+            // Replaces the current page with itself, bypassing history
+            location.replace(location.href);
+        }
+    </script>
 </head>
 <body>
     {% block content %}
@@ -76,7 +82,15 @@
             }
         }
     </script>
-    
-    {% block scripts %}{% endblock %}
+    {% block scripts %}
+    <script>
+        window.addEventListener('pageshow', (event) => {
+            const navEntry = performance.getEntriesByType('navigation')[0];
+            if (event.persisted || navEntry?.type === 'back_forward') {
+                forcePageReload();
+            }
+        });
+        </script>
+    {% endblock %}
 </body>
 </html>

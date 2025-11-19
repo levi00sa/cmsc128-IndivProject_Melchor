@@ -1259,6 +1259,11 @@ body {
     gap: 0.5rem;
 }
 
+.archived-header p {
+    color: #6b7280;
+    font-size: 0. ninerem;
+}
+
 .hide-archived-btn {
     background: #6b7280;
     color: white;
@@ -1709,7 +1714,6 @@ body {
 
 .task-card:active {
     cursor: grabbing;
-    transform: rotate(2deg) scale(1.05);
 }
 
 /* PRIORITY COLORS */
@@ -1844,7 +1848,6 @@ body {
 /* DRAGGING EFFECT */
 .task-card.dragging {
     opacity: 0.5;
-    transform: rotate(5deg) scale(1.08);
     box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
     z-index: 1000;
     border-color: #667eea;

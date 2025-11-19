@@ -74,6 +74,14 @@
 
 {% block scripts %}
 <script>
+    window.addEventListener('pageshow', (event) => {
+        const navEntry = performance.getEntriesByType('navigation')[0];
+        if (event.persisted || navEntry?.type === 'back_forward') {
+            forcePageReload();
+        }
+    });
+</script>
+<script>
     handleFormSubmit('profile-form', '/auth/profile', 'Profile updated successfully!');
 </script>
 {% endblock %}

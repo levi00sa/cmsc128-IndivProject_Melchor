@@ -1,6 +1,6 @@
 # routes/auth_routes.py
 # routes: login, register -> tasks -> profile -> reset password -> logout -> login
-from flask import Blueprint, request, jsonify, session, redirect, url_for, render_template
+from flask import Blueprint, request, jsonify, session, render_template, make_response
 from flask_bcrypt import Bcrypt
 from database import get_db_connection
 from functools import wraps
@@ -8,6 +8,15 @@ import secrets
 
 auth_bp = Blueprint('auth_bp', __name__)
 bcrypt = Bcrypt()
+
+def nocache(view):
+    @wraps(view)
+    def no_cache(*args, **kwargs):
+        response = make_response(view(*args, **kwargs))
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        return response
+    return no_cache
 
 def login_required(f):
     """Decorator to require login for routes"""
@@ -217,3 +226,4 @@ def logout():
             return render_template('logout.html', logged_out=True)
         session.clear()
         return render_template('logout.html', logged_out=True)
+

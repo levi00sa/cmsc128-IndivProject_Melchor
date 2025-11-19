@@ -5,6 +5,7 @@ from tasks import (
     update_task, delete_task, search_tasks, archive_task, unarchive_task
 )
 from routes.auth_routes import login_required
+from routes.auth_routes import nocache
 
 task_bp = Blueprint('task_bp', __name__)
 
@@ -12,6 +13,7 @@ initialize_db()
 #Get all tasks for the logged-in user (personal or collaborative)
 @task_bp.route('/tasks', methods=['GET'])
 @login_required
+@nocache
 def get_user_tasks():
     #get all values
     user_id = session.get('user_id')
@@ -74,6 +76,7 @@ def get_user_tasks():
 #Create a new task (personal or collaborative)
 @task_bp.route('/tasks', methods=['POST'])
 @login_required
+@nocache
 def add_task():
     user_id = session.get('user_id')
     data = request.get_json()
@@ -143,6 +146,7 @@ def add_task():
 #Get a specific task by ID
 @task_bp.route('/tasks/<int:task_id>', methods=['GET'])
 @login_required
+@nocache
 def get_task(task_id):
 
     user_id = session.get('user_id')
@@ -183,6 +187,7 @@ def get_task(task_id):
 #Update a task
 @task_bp.route('/tasks/<int:task_id>', methods=['PUT'])
 @login_required
+@nocache
 def update_user_task(task_id):
 
     user_id = session.get('user_id')
@@ -254,6 +259,7 @@ def update_user_task(task_id):
 #delete a task
 @task_bp.route('/tasks/<int:task_id>', methods=['DELETE'])
 @login_required
+@nocache
 def delete_user_task(task_id):
 
     user_id = session.get('user_id')
@@ -288,6 +294,7 @@ def delete_user_task(task_id):
 #Update only the status of a task
 @task_bp.route('/tasks/<int:task_id>/status', methods=['PUT'])
 @login_required
+@nocache
 def update_task_status(task_id):
     user_id = session.get('user_id')
     data = request.get_json()
@@ -333,6 +340,7 @@ def update_task_status(task_id):
 #Archive a task
 @task_bp.route('/tasks/<int:task_id>/archive', methods=['POST'])
 @login_required
+@nocache
 def archive_user_task(task_id):
 
     user_id = session.get('user_id')
@@ -374,6 +382,7 @@ def archive_user_task(task_id):
 #unarchive
 @task_bp.route('/tasks/<int:task_id>/unarchive', methods=['POST'])
 @login_required
+@nocache
 def unarchive_user_task(task_id):
 
     user_id = session.get('user_id')
@@ -415,5 +424,6 @@ def unarchive_user_task(task_id):
 
 @task_bp.route('/my-tasks')
 @login_required
+@nocache
 def tasks_page():
     return render_template('tasks.html')

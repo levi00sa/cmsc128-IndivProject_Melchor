@@ -570,11 +570,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Delete handler
         const deleteBtn = card.querySelector(".delete-archived-btn");
-        deleteBtn.addEventListener("click", async () => {
+        try {
+            deleteBtn.addEventListener("click", async () => {
             if (confirm("Are you sure you want to permanently delete this archived task?")) {
                 await deleteTask(task.id, card);
             }
         });
+        }
+        catch (err){
+            showToast("Unarchive task to delete.", "error");
+            console.error(err);
+        }
 
         return card;
     }
@@ -649,9 +655,9 @@ document.addEventListener("DOMContentLoaded", () => {
         deletedTaskBackup = null;
     });
 
-    // =====================================================
-    // DRAG & DROP (robust, uses dataTransfer)
-    // =====================================================
+    // ============
+    // DRAG & DROP
+    // ============
     function initializeDragDrop() {
         // Ensure lists exist
         const lists = Array.from(document.querySelectorAll(".kanban-list"));
@@ -676,7 +682,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const cards = Array.from(document.querySelectorAll(".task-card"));
         
         cards.forEach(card => {
-            // Make sure card is draggable
             card.draggable = true;
             
             // Remove any existing dragstart listeners by cloning
@@ -691,6 +696,7 @@ document.addEventListener("DOMContentLoaded", () => {
         freshCards.forEach(card => {
             card.draggable = true;
             
+            // buttons dont work!!??
             // Reattach delete button event listener (lost during cloning)
             const delBtn = card.querySelector(".delete-btn");
             if (delBtn) {
