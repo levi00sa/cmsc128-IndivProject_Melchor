@@ -132,7 +132,7 @@ cmsc128-IndivProject_Melchor/
 1. Complete the installation steps.
 2. Run `flask --app app.py run --host 0.0.0.0 --port 5002`.
 3. Allow inbound traffic on port 5002 if your OS prompts.
-4. Check your local IP (e.g., `192.168.1.24`) and use `http://192.168.1.24:5002` on phones/laptops within the same network. The SQLite files sitting beside the app keep data persistent.
+4. Check your local IP and use `http://<your-local-ip>:5002` on phones/laptops within the same network. The SQLite files sitting beside the app keep data persistent.
 
 ### Online deployment (expanded requirement)
 You can deploy to Render, Railway, Fly.io, or similar services:
@@ -307,12 +307,3 @@ This project is part of CMSC 128 Individual Project.
 ## Author
 
 Eleah Joy Melchor
-
----
-
-**Note**: This is a development project. For production use, consider:
-- Changing the secret key in `app.py`
-- Using environment variables for configuration
-- Implementing proper email service for password resets
-- Adding rate limiting and additional security measures
-- Using a production-grade database (PostgreSQL, MySQL)
