@@ -6,28 +6,26 @@
     <title>{% block title %}Flask App{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <nav>
-            {% if session.user_id %}
-            <div class="user-actions">
-                <a href="{{ url_for('auth_bp.profile') }}" class="profile-link">Profile</a>
-                <a href="{{ url_for('auth_bp.logout') }}" class="logout-link"> Logout</a>
-            {% else %}
-                <a href="{{ url_for('auth_bp.login') }}" class="login-link">Login</a>
-                <a href="{{ url_for('auth_bp.register') }}" class="register-link">Register</a>
-            {% endif %}
-            </div>
-        </nav>
-    </header>
-    
-    <div class="container">
-        {% block content %}{% endblock %}
+    {% block content %}
+    <div class = "base-content">
+        <img src="{{ url_for('static', filename='todo.png') }}" alt="logo">
+        <p style="font-family: Pixelify Sans"><b>Your trusty productivity buddy.</b></p>
+        <a href="{{ url_for('auth_bp.login') }}" 
+           style="display: inline-block; background: #000000; color: white; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; cursor: pointer; font-family: Pixelify Sans; font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; margin-top: 1.5rem;"
+           onmouseover="this.style.background='#DE7428'; this.style.transform='translateY(-1px)'"
+           onmouseout="this.style.background='#000000'; this.style.transform='translateY(0)'">
+            Sign In
+        </a>
     </div>
+    {% endblock %}
     
     <script>
-        // Common JavaScript functions
+        // Show toast message
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `${type}-toast`;
@@ -40,6 +38,7 @@
             }, 3000);
         }
         
+        // Handle form submission
         function handleFormSubmit(formId, endpoint, successMessage) {
             const form = document.getElementById(formId);
             if (form) {

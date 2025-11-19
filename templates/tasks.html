@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks Board{% endblock %}
+
+{% block content %}
+
+<div class="board-wrapper">
+
+    <!-- HEADER -->
+    <div class="board-header">
+        <div class="board-header-top">
+            <div class="greeting">
+                <div class="greeting-header">
+                    <a href="{{ url_for('auth_bp.profile') }}" class="profile-icon-link" title="Profile">
+                        <i class="fas fa-user-circle"></i>
+                    </a>
+                    <h1>Hello, {{ session.get('name', session.get('username', 'User')) }}!</h1>
+                </div>
+                <p>What are your priorities today?</p>
+            </div>
+
+            <!-- LIST SELECTOR AND ACTIONS -->
+            <div class="list-controls">
+                <div class="list-selector-container">
+                    <label for="list-selector" class="list-label">View:</label>
+                    <select id="list-selector" class="list-selector">
+                        <option value="personal">Personal Tasks</option>
+                    </select>
+                    <button id="create-collab-list-btn" class="collab-btn" title="Create Collaborative List">
+                        <i class="fas fa-users"></i> New
+                    </button>
+                    <button id="toggle-archived-btn" class="archive-toggle-btn" title="Show Archived Tasks">
+                        <i class="fas fa-archive"></i> Archived
+                    </button>
+                </div>
+                
+                <div id="collab-list-info" class="collab-list-info" style="display: none;">
+                    <span id="collab-list-name"></span>
+                    <button id="manage-members-btn" class="manage-members-btn" title="Manage Members">
+                        <i class="fas fa-user-plus"></i> Members
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- INPUT BAR -->
+        <div class="task-input-bar">
+            <input id="task-title-input" type="text" placeholder="Enter a new task...">
+            
+            <select id="task-priority-input">
+                <option value="High">High Priority</option>
+                <option value="Medium" selected>Medium Priority</option>
+                <option value="Low">Low Priority</option>
+            </select>
+
+            <input id="task-date-input" type="date">
+
+            <button id="task-add-btn" class="add-btn">
+                <i class="fas fa-plus"></i> Add Task
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL FOR CREATING COLLABORATIVE LIST -->
+    <div id="create-collab-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Create Collaborative List</h2>
+            <form id="create-collab-form">
+                <label for="collab-list-name">List Name:</label>
+                <input type="text" id="collab-list-name-input" required placeholder="e.g., Team Project">
+                <button type="submit" class="submit-btn">Create List</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL FOR MANAGING MEMBERS -->
+    <div id="manage-members-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Manage Members</h2>
+            <div id="members-list"></div>
+            <form id="add-member-form">
+                <label for="member-username">Add Member (username or email):</label>
+                <input type="text" id="member-username" required placeholder="Enter username or email">
+                <button type="submit" class="submit-btn">Add Member</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- KANBAN BOARD -->
+    <div class="kanban-board">
+
+        <!-- BACKLOGS -->
+        <div class="kanban-column">
+            <h2>BACKLOGS <span>↓</span></h2>
+            <div class="kanban-list" id="backlog-list"></div>
+        </div>
+
+        <!-- IN PROGRESS -->
+        <div class="kanban-column">
+            <h2>IN PROGRESS <span>→</span></h2>
+            <div class="kanban-list" id="progress-list"></div>
+        </div>
+
+        <!-- COMPLETED -->
+        <div class="kanban-column">
+            <h2>COMPLETED <span>↑</span></h2>
+            <div class="kanban-list" id="completed-list"></div>
+        </div>
+
+    </div>
+
+    <!-- ARCHIVED TASKS SECTION -->
+    <div id="archived-section" class="archived-section" style="display: none;">
+        <div class="archived-header">
+            <h2><i class="fas fa-archive"></i> Archived Tasks</h2>
+            <button id="hide-archived-btn" class="hide-archived-btn">
+                <i class="fas fa-times"></i> Hide
+            </button>
+        </div>
+        <div class="archived-tasks-list" id="archived-tasks-list"></div>
+    </div>
+
+    <!-- UNDO TOAST -->
+    <div id="undo-toast" class="undo-toast hidden">
+        Task deleted!
+        <span id="undo-count">5</span>
+        <button id="undo-btn">Undo</button>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
+{% endblock %}

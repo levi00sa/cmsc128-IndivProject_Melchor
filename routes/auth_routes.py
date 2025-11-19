@@ -1,9 +1,9 @@
 # routes/auth_routes.py
+# routes: login, register -> tasks -> profile -> reset password -> logout -> login
 from flask import Blueprint, request, jsonify, session, redirect, url_for, render_template
 from flask_bcrypt import Bcrypt
 from database import get_db_connection
 from functools import wraps
-import hashlib
 import secrets
 
 auth_bp = Blueprint('auth_bp', __name__)
@@ -13,8 +13,8 @@ def login_required(f):
     """Decorator to require login for routes"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('auth_bp.login'))
+        if "user_id" not in session:
+            return jsonify({"message": "Unauthorized"}), 401
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function
@@ -49,13 +49,15 @@ def register():
                   (username, email, hashed_password, name))
         conn.commit()
         user_id = c.lastrowid
+        c.execute('SELECT id, username, name FROM users WHERE id = ?', (user_id,))
+        user = c.fetchone()
         conn.close()
         
-        session['user_id'] = user_id
-        session['username'] = username
-        session['name'] = name
+        session['user_id'] = user['id']
+        session['username'] = user['username']
+        session['name'] = user['name']
         
-        return jsonify({'success': True, 'message': 'Account created successfully'})
+        return jsonify({'success': True, 'message': 'Account created successfully', 'redirect': '/my-tasks'}), 200
     
     return render_template('signup.html')
 
@@ -83,7 +85,7 @@ def login():
         session['user_id'] = user['id']
         session['username'] = user['username']
         session['name'] = user['name']
-        return jsonify({'success': True, 'message': 'Login successful', 'redirect': '/'}), 200
+        return jsonify({'success': True, 'message': 'Login successful', 'redirect': '/my-tasks'}), 200
     else:
         return jsonify({'success': False, 'message': 'Invalid username or password'}), 401
 
@@ -163,7 +165,12 @@ def forgot_password():
             conn.close()
             # In a real application, send the reset token via email
             # Here, we just return the token for demonstration purposes
-            return jsonify({'success': True, 'message': f'Reset token: {reset_token}'})
+            return jsonify({
+                'success': True, 
+                'message': f'Reset token: {reset_token}',
+                'reset_token': reset_token,
+                'redirect': f'/auth/reset_password/{reset_token}'
+            })
         else:
             conn.close()
             return jsonify({'success': False, 'message': 'Email not found'})
@@ -187,14 +194,26 @@ def reset_password(token):
                       (hashed_password, user[0]))
             conn.commit()
             conn.close()
-            return jsonify({'success': True, 'message': 'Password reset successfully'})
+            return jsonify({
+                'success': True, 
+                'message': 'Password reset successfully',
+                'redirect': '/auth/login'
+            })
         else:
             conn.close()
             return jsonify({'success': False, 'message': 'Invalid or expired token'})
     
     return render_template('reset_password.html', token=token)
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['GET', 'POST'])
 def logout():
-    session.clear()
-    return redirect(url_for('auth_bp.login'))
+    if request.method == 'GET':
+        # Check if user is logged in
+        if "user_id" not in session:
+            return render_template('logout.html', logged_out=True)
+        return render_template('logout.html', logged_out=False)
+    else:
+        if "user_id" not in session:
+            return render_template('logout.html', logged_out=True)
+        session.clear()
+        return render_template('logout.html', logged_out=True)

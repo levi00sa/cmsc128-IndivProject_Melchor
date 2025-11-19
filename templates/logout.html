@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Logout - Flask App{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 0 auto; padding: 2rem;">
+    <div class="header" style="text-align: center; margin-bottom: 2rem;">
+        {% if logged_out %}
+        <h1 style="color: #000000; margin-bottom: 0.5rem;">Logged Out</h1>
+        <p style="color: #6b7280;">You have been successfully logged out.</p>
+        <p style="color: #6b7280; margin-top: 1rem;">Redirecting to login page...</p>
+        {% else %}
+        <h1 style="color: #000000; margin-bottom: 0.5rem;">Logout</h1>
+        <p style="color: #6b7280; margin-bottom: 2rem;">Are you sure you want to logout?</p>
+        <form id="logout-form" method="POST" action="/auth/logout" style="display: flex; gap: 1rem; justify-content: center;">
+            <button type="submit" style="background: #000000; color: white; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; cursor: pointer; font-family: Pixelify Sans; font-size: 0.875rem; font-weight: 600; transition: all 0.2s ease;" onmouseover="this.style.background='#DE7428'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#000000'; this.style.transform='translateY(0)'">Yes, Logout</button>
+            <a href="/my-tasks" style="background: #6b7280; color: white; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; cursor: pointer; font-family: Pixelify Sans; font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; display: inline-block;" onmouseover="this.style.background='#4b5563'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#6b7280'; this.style.transform='translateY(0)'">Cancel</a>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    {% if logged_out %}
+    // Automatically redirect to login after 2 seconds
+    setTimeout(() => {
+        window.location.href = '/auth/login';
+    }, 2000);
+    {% endif %}
+</script>
+{% endblock %}
