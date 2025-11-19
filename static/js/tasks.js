@@ -28,12 +28,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const manageMembersBtn = document.getElementById("manage-members-btn");
     const createCollabModal = document.getElementById("create-collab-modal");
     const manageMembersModal = document.getElementById("manage-members-modal");
+    const collabOwnerBadge = document.getElementById("collab-owner-badge");
+    const collabMemberCount = document.getElementById("collab-member-count");
     
     // Archived tasks selectors
     const toggleArchivedBtn = document.getElementById("toggle-archived-btn");
     const archivedSection = document.getElementById("archived-section");
     const hideArchivedBtn = document.getElementById("hide-archived-btn");
     const archivedTasksList = document.getElementById("archived-tasks-list");
+    const boardLoadingState = document.getElementById("board-loading-state");
+    const boardLoadingMessage = document.getElementById("board-loading-message");
 
     let allTasks = [];
     let deletedTaskBackup = null;
@@ -42,12 +46,19 @@ document.addEventListener("DOMContentLoaded", () => {
     let dragDropInitialized = false;
     let currentListId = null; // null for personal, number for collab list
     let collabLists = [];
+    let loadingCounter = 0;
 
     // -----------------------------------------
     // INIT
     // -----------------------------------------
-    loadCollabLists();
-    loadTasks();
+    (async () => {
+        setBoardLoading(true, "Loading your workspace...");
+        try {
+            await Promise.all([loadCollabLists(true), loadTasks()]);
+        } finally {
+            setBoardLoading(false);
+        }
+    })();
 
     // Modal close handlers
     document.querySelectorAll('.close-modal').forEach(btn => {
@@ -67,12 +78,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.target.value === 'personal') {
             currentListId = null;
             collabListInfo.style.display = 'none';
+            updateCollabContext(null);
         } else {
             currentListId = parseInt(e.target.value);
             const list = collabLists.find(l => l.id === currentListId);
             if (list) {
-                collabListName.textContent = list.name;
-                collabListInfo.style.display = 'flex';
+                updateCollabContext(list);
             }
         }
         loadTasks();
@@ -154,8 +165,47 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    function updateCollabContext(list) {
+        if (!list) {
+            collabListInfo.style.display = 'none';
+            collabOwnerBadge.textContent = '';
+            collabMemberCount.textContent = '';
+            collabListName.textContent = '';
+            return;
+        }
+        collabListName.textContent = list.name;
+        collabOwnerBadge.textContent = list.is_owner ? 'You own this list' : `Owner: ${list.owner_name || 'Unknown'}`;
+        const members = list.member_count || 0;
+        collabMemberCount.textContent = `${members} member${members === 1 ? '' : 's'}`;
+        collabListInfo.style.display = 'flex';
+    }
+
+    function setBoardLoading(active, message) {
+        if (!boardLoadingState) return;
+        if (active) {
+            loadingCounter += 1;
+            if (message) {
+                boardLoadingMessage.textContent = message;
+            }
+            boardLoadingState.classList.remove("hidden");
+            addBtn.disabled = true;
+            addBtn.setAttribute("aria-busy", "true");
+        } else {
+            loadingCounter = Math.max(0, loadingCounter - 1);
+            if (loadingCounter === 0) {
+                boardLoadingState.classList.add("hidden");
+                boardLoadingMessage.textContent = "Loading your tasks...";
+                addBtn.disabled = false;
+                addBtn.removeAttribute("aria-busy");
+            }
+        }
+    }
+
     // Load collaborative lists
-    async function loadCollabLists() {
+    async function loadCollabLists(showLoader = false) {
+        if (showLoader) {
+            setBoardLoading(true, "Loading collaborative lists...");
+        }
         try {
             const res = await fetch('/collab_lists');
             const data = await res.json();
@@ -169,9 +219,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     option.textContent = list.name + (list.is_owner ? ' (Owner)' : '');
                     listSelector.appendChild(option);
                 });
+                const desiredValue = currentListId ? currentListId.toString() : 'personal';
+                const hasOption = Array.from(listSelector.options).some(opt => opt.value === desiredValue);
+                if (hasOption) {
+                    listSelector.value = desiredValue;
+                } else {
+                    listSelector.value = 'personal';
+                    currentListId = null;
+                }
+                const activeList = collabLists.find(l => l.id === currentListId);
+                updateCollabContext(activeList || null);
             }
         } catch (err) {
             console.error('Error loading collab lists:', err);
+        } finally {
+            if (showLoader) {
+                setBoardLoading(false);
+            }
         }
     }
 
@@ -266,7 +330,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // =====================================================
     // LOAD TASKS
     // =====================================================
-    async function loadTasks() {
+    async function loadTasks(messageOverride) {
+        setBoardLoading(true, messageOverride || (currentListId ? "Loading collaborative tasks..." : "Loading personal tasks..."));
         try {
             let url = "/tasks";
             if (currentListId) {
@@ -286,6 +351,8 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (err) {
             showToast("Failed to load tasks", "error");
             console.error(err);
+        } finally {
+            setBoardLoading(false);
         }
     }
 

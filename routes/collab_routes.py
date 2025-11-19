@@ -4,14 +4,42 @@ from collab_lists import (
     create_collab_list, get_collab_list_by_id, get_collab_lists_by_owner, delete_collab_list
 )
 from collab_members import (
-    add_collab_member, get_collab_members, get_collab_lists_for_user, 
-    is_user_member, remove_collab_member
+    add_collab_member, get_collab_members, get_collab_lists_for_user,
+    is_user_member, remove_collab_member, count_collab_members
 )
 from database import get_db_connection
 from routes.auth_routes import login_required
 from tasks import get_tasks_for_collab_list
 
 collab_bp = Blueprint('collab_bp', __name__)
+
+
+def _ensure_list_access(list_id, user_id, owner_only=False):
+    collab_list = get_collab_list_by_id(list_id)
+    if not collab_list:
+        return None, False, (jsonify({'success': False, 'message': 'List not found'}), 404)
+
+    is_owner = collab_list['owner_id'] == user_id
+    if owner_only and not is_owner:
+        return None, False, (jsonify({'success': False, 'message': 'Only the owner can perform this action'}), 403)
+
+    if not is_owner:
+        if not is_user_member(list_id, user_id):
+            return None, False, (jsonify({'success': False, 'message': 'Access denied'}), 403)
+
+    return collab_list, is_owner, None
+
+
+def _fetch_owner_names(owner_ids):
+    if not owner_ids:
+        return {}
+    placeholders = ','.join(['?'] * len(owner_ids))
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(f'SELECT id, name FROM users WHERE id IN ({placeholders})', tuple(owner_ids))
+    owners = {row['id']: row['name'] for row in c.fetchall()}
+    conn.close()
+    return owners
 
 # Get all collaborative lists that the user owns or is a member of
 @collab_bp.route('/collab_lists', methods=['GET'])
@@ -28,24 +56,33 @@ def get_user_collab_lists():
         if collab_list and collab_list['owner_id'] != user_id:                  
             member_lists.append(collab_list)                                    # Add list to member lists
     
-    all_lists = []                                                            #add lists the user owns
-    for list_item in owned_lists:                                            # For each list in owned_lists, add to all_lists
+    owner_name_lookup = _fetch_owner_names({l['owner_id'] for l in member_lists if l['owner_id'] != user_id})
+
+    all_lists = []
+    for list_item in owned_lists:
         all_lists.append({
             'id': list_item['id'],
             'name': list_item['name'],
             'owner_id': list_item['owner_id'],
+            'owner_name': session.get('name', 'You'),
             'is_owner': True,
+            'member_count': count_collab_members(list_item['id']),
+            'created_at': list_item['created_at']
+        })
+
+    for list_item in member_lists:
+        all_lists.append({
+            'id': list_item['id'],
+            'name': list_item['name'],
+            'owner_id': list_item['owner_id'],
+            'owner_name': owner_name_lookup.get(list_item['owner_id'], 'Owner'),
+            'is_owner': False,
+            'member_count': count_collab_members(list_item['id']),
             'created_at': list_item['created_at']
         })
     
-    for list_item in member_lists:                                           # For each list in member_lists, add to all_lists      
-        all_lists.append({
-            'id': list_item['id'],
-            'name': list_item['name'],
-            'owner_id': list_item['owner_id'],
-            'is_owner': False,
-            'created_at': list_item['created_at']
-        })
+    # Sort with owned lists first, then alphabetically
+    all_lists.sort(key=lambda l: (0 if l['is_owner'] else 1, l['name'].lower()))
     
     return jsonify({'success': True, 'lists': all_lists})
 
@@ -83,54 +120,43 @@ def create_list():
 @login_required
 def get_list(list_id):
     user_id = session.get('user_id')
-    collab_list = get_collab_list_by_id(list_id)
-    
-    if not collab_list:
-        return jsonify({'success': False, 'message': 'List not found'}), 404
-    
-    # Check if user has access either as owner or member of collab list
-    is_owner = collab_list['owner_id'] == user_id
-    is_member = is_user_member(list_id, user_id) if not is_owner else True
-    
-    if not is_owner and not is_member:
-        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    collab_list, is_owner, error = _ensure_list_access(list_id, user_id)
+    if error:
+        return error
     
     # Get owner info
     conn = get_db_connection()
     c = conn.cursor()
     c.execute('SELECT id, username, name, email FROM users WHERE id = ?', (collab_list['owner_id'],))
     owner = c.fetchone()
-    conn.close()
     
     # Get members
     members = get_collab_members(list_id)
+    member_ids = [member['user_id'] for member in members]
     member_list = []
+
+    if member_ids:
+        placeholders = ','.join(['?'] * len(member_ids))
+        c.execute(f'''
+            SELECT id, username, name, email
+            FROM users
+            WHERE id IN ({placeholders})
+        ''', tuple(member_ids))
+        users_by_id = {row['id']: row for row in c.fetchall()}
+        for user_id in member_ids:
+            user = users_by_id.get(user_id)
+            if user:
+                member_list.append({
+                    'id': user['id'],
+                    'username': user['username'],
+                    'name': user['name'],
+                    'email': user['email'],
+                    'is_owner': user['id'] == collab_list['owner_id']
+                })
+    conn.close()
     
-    # Add owner first
-    if owner:
-        member_list.append({
-            'id': owner['id'],
-            'username': owner['username'],
-            'name': owner['name'],
-            'email': owner['email'],
-            'is_owner': True
-        })
-    
-    # Add other members
-    for member in members:
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute('SELECT id, username, name, email FROM users WHERE id = ?', (member['user_id'],))
-        user = c.fetchone()
-        conn.close()
-        if user:
-            member_list.append({
-                'id': user['id'],
-                'username': user['username'],
-                'name': user['name'],
-                'email': user['email'],
-                'is_owner': False
-            })
+    # Ensure owner appears first
+    member_list.sort(key=lambda m: (0 if m['is_owner'] else 1, m['name'].lower()))
     
     return jsonify({
         'success': True,
@@ -149,15 +175,9 @@ def get_list(list_id):
 @login_required
 def delete_list(list_id):
     user_id = session.get('user_id')
-    collab_list = get_collab_list_by_id(list_id)
-    
-    #check if list is there
-    if not collab_list:
-        return jsonify({'success': False, 'message': 'List not found'}), 404
-    
-    #check if current user is the owner
-    if collab_list['owner_id'] != user_id:
-        return jsonify({'success': False, 'message': 'Only the owner can delete the list'}), 403
+    collab_list, _, error = _ensure_list_access(list_id, user_id, owner_only=True)
+    if error:
+        return error
     
     try:
         deleted = delete_collab_list(list_id, user_id) #store deleted list
@@ -175,16 +195,9 @@ def add_member(list_id):
     user_id = session.get('user_id')
     data = request.get_json()
     
-    collab_list = get_collab_list_by_id(list_id)
-    if not collab_list:
-        return jsonify({'success': False, 'message': 'List not found'}), 404
-    
-    # Check if user is owner or member
-    is_owner = collab_list['owner_id'] == user_id
-    is_member = is_user_member(list_id, user_id) if not is_owner else True
-    
-    if not is_owner and not is_member:
-        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    collab_list, is_owner, error = _ensure_list_access(list_id, user_id)
+    if error:
+        return error
     
     # Get user to add by username or email
     username_or_email = data.get('username_or_email', '').strip()
@@ -224,15 +237,9 @@ def add_member(list_id):
 @login_required
 def remove_member(list_id, member_id):
     user_id = session.get('user_id')
-    collab_list = get_collab_list_by_id(list_id)
-    
-    #check if list is there
-    if not collab_list:
-        return jsonify({'success': False, 'message': 'List not found'}), 404
-    
-    # check if current user is owner
-    if collab_list['owner_id'] != user_id:
-        return jsonify({'success': False, 'message': 'Only the owner can remove members'}), 403
+    collab_list, _, error = _ensure_list_access(list_id, user_id, owner_only=True)
+    if error:
+        return error
     
     #check if current user is removing themself
     if member_id == user_id:
@@ -254,17 +261,9 @@ def remove_member(list_id, member_id):
 @login_required
 def get_list_tasks(list_id):
     user_id = session.get('user_id')
-    collab_list = get_collab_list_by_id(list_id)
-    
-    if not collab_list:
-        return jsonify({'success': False, 'message': 'List not found'}), 404
-    
-    # Check if user has access
-    is_owner = collab_list['owner_id'] == user_id
-    is_member = is_user_member(list_id, user_id) if not is_owner else True
-    
-    if not is_owner and not is_member:
-        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    collab_list, _, error = _ensure_list_access(list_id, user_id)
+    if error:
+        return error
     
     status = request.args.get('status')
     priority = request.args.get('priority')

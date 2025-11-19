@@ -49,11 +49,15 @@ body {
     color: #000000;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .container {
     background-color: #ffffff;
     border-radius: 1.5rem;
-    padding: 2rem;
-    width: 50%;
+    padding: 0 1rem;
+    width: 100%;
     max-width: 1400px;
     margin: 0 auto;
     box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
@@ -1146,6 +1150,33 @@ body {
     flex: 1;
 }
 
+@media (max-width: 576px) {
+    .list-selector-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .list-selector-container > * {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .list-selector-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    .list-selector-container > * {
+        width: 100%;
+    }
+}
+
+
 .collab-btn {
     background: #622375;
     color: white;
@@ -1179,6 +1210,38 @@ body {
     font-size: 0.75rem;
 }
 
+.collab-list-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.collab-meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.7rem;
+}
+
+.collab-owner-badge,
+.collab-member-count {
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.collab-owner-badge {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.collab-member-count {
+    background: #e0e7ff;
+    color: #312e81;
+}
+
 .collab-list-info span {
     font-weight: 600;
     color: #4338ca;
@@ -1186,6 +1249,34 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.board-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px dashed #d1d5db;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.loading-spinner {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    border: 3px solid rgba(55, 65, 81, 0.2);
+    border-top-color: #000;
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .manage-members-btn {
@@ -1593,6 +1684,12 @@ body {
 .add-btn:active {
     transform: translateY(0);
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.add-btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 /* BOARD GRID */
 .kanban-board {
@@ -2175,39 +2272,36 @@ body {
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
-    .kanban-board {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
+
+@media (max-width: 576px) {
+    .greeting h1 {
+        font-size: 1.5rem;
+    }
+    
+    .greeting p {
+        font-size: 0.9rem;
     }
     
     .kanban-column {
-        min-height: 400px;
+        padding: 0.75rem;
     }
     
-    .board-header {
-        padding: 1.5rem;
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .greeting {
-        min-width: auto;
-    }
-    
-    .greeting h1 {
-        font-size: 2rem;
+    .task-card {
+        padding: 0.75rem;
+        font-size: 0.9rem;
     }
     
     .task-input-bar {
-        flex-direction: column;
+        gap: 0.5rem;
     }
     
-    .task-input-bar input[type="text"],
-    .task-input-bar select,
-    .task-input-bar input[type="date"],
-    .add-btn {
+    .modal-content {
         width: 100%;
+        padding: 1rem;
+    }
+    
+    .board-header {
+        padding: 1rem;
     }
 }
 
@@ -2280,5 +2374,41 @@ body {
     
     .toast.show {
         transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 1024px) {
+    .kanban-board {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .kanban-column {
+        min-height: 400px;
+    }
+    
+    .board-header {
+        padding: 1.5rem;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .greeting {
+        min-width: auto;
+    }
+    
+    .greeting h1 {
+        font-size: 2rem;
+    }
+    
+    .task-input-bar {
+        flex-direction: column;
+    }
+    
+    .task-input-bar input[type="text"],
+    .task-input-bar select,
+    .task-input-bar input[type="date"],
+    .add-btn {
+        width: 100%;
     }
 }

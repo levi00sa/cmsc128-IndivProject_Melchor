@@ -90,3 +90,11 @@ def is_user_member(collab_list_id, user_id):
     member = c.fetchone()
     conn.close()
     return member is not None
+
+def count_collab_members(collab_list_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('SELECT COUNT(*) as total FROM collab_members WHERE collab_list_id = ?', (collab_list_id,))
+    result = c.fetchone()
+    conn.close()
+    return result['total'] if result else 0

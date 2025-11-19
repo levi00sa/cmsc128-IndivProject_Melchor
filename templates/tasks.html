@@ -22,7 +22,7 @@
             <!-- LIST SELECTOR AND ACTIONS -->
             <div class="list-controls">
                 <div class="list-selector-container">
-                    <label for="list-selector" class="list-label">View:</label>
+                    <label for="list-selector" class="list-label">Select lists:</label>
                     <select id="list-selector" class="list-selector">
                         <option value="personal">Personal Tasks</option>
                     </select>
@@ -35,7 +35,13 @@
                 </div>
                 
                 <div id="collab-list-info" class="collab-list-info" style="display: none;">
-                    <span id="collab-list-name"></span>
+                    <div class="collab-list-details">
+                        <span id="collab-list-name"></span>
+                        <div class="collab-meta">
+                            <span id="collab-owner-badge" class="collab-owner-badge"></span>
+                            <span id="collab-member-count" class="collab-member-count"></span>
+                        </div>
+                    </div>
                     <button id="manage-members-btn" class="manage-members-btn" title="Manage Members">
                         <i class="fas fa-user-plus"></i> Members
                     </button>
@@ -86,6 +92,11 @@
                 <button type="submit" class="submit-btn">Add Member</button>
             </form>
         </div>
+    </div>
+
+    <div id="board-loading-state" class="board-loading hidden">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <p id="board-loading-message">Loading your tasks...</p>
     </div>
 
     <!-- KANBAN BOARD -->

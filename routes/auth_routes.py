@@ -1,6 +1,6 @@
 # routes/auth_routes.py
 # routes: login, register -> tasks -> profile -> reset password -> logout -> login
-from flask import Blueprint, request, jsonify, session, render_template, make_response
+from flask import Blueprint, request, jsonify, session, render_template, make_response, redirect, url_for
 from flask_bcrypt import Bcrypt
 from database import get_db_connection
 from functools import wraps
@@ -23,7 +23,10 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user_id" not in session:
-            return jsonify({"message": "Unauthorized"}), 401
+            wants_json = request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html
+            if wants_json or request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({"message": "Unauthorized"}), 401
+            return redirect(url_for('auth_bp.login'))
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function

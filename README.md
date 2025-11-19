@@ -40,6 +40,10 @@ A full-stack web application for managing personal and collaborative tasks with 
 - **Vanilla JavaScript**: No frameworks, pure JS for drag-and-drop and API calls
 - **Font Awesome**: Icons
 
+## Backend Choice & Persistence
+
+The backend is **Flask** with **SQLite** databases. SQLite keeps the footprint small but still provides a durable, file-backed store (`database.db`, `tasks.db`, `collab_lists.db`, `collab_members.db`). Because the app writes directly to these files, your data persists after browser refreshes or backend restarts. For cloud deployment you can mount the `.db` files on a persistent volume or swap to PostgreSQL with minimal changes in the `database.py`, `tasks.py`, `collab_lists.py`, and `collab_members.py` helpers.
+
 ## Project Structure
 
 ```
@@ -108,13 +112,36 @@ cmsc128-IndivProject_Melchor/
    pip install -r requirements.txt
    ```
 
-5. **Run the application**:
+5. **Run the application (development)**:
    ```bash
-   python app.py
+   flask --app app.py --debug run --port 5002
    ```
 
 6. **Access the application**:
    - Open your browser and navigate to `http://localhost:5002`
+
+7. **Run on the local network (multi-device)**:
+   ```bash
+   flask --app app.py run --host 0.0.0.0 --port 5002
+   ```
+   - Share `http://<your-local-ip>:5002` with other devices connected to the same Wi‑Fi/LAN.
+
+## Deployment
+
+### Local LAN deployment (minimum requirement)
+1. Complete the installation steps.
+2. Run `flask --app app.py run --host 0.0.0.0 --port 5002`.
+3. Allow inbound traffic on port 5002 if your OS prompts.
+4. Check your local IP (e.g., `192.168.1.24`) and use `http://192.168.1.24:5002` on phones/laptops within the same network. The SQLite files sitting beside the app keep data persistent.
+
+### Online deployment (expanded requirement)
+You can deploy to Render, Railway, Fly.io, or similar services:
+1. Push the repo to GitHub (or another git host).
+2. Create a new web service pointing to the repo.
+3. Configure environment variables such as `FLASK_APP=app.py`, `FLASK_ENV=production`, and a strong `SECRET_KEY`.
+4. Set the start command to `gunicorn app:app --bind 0.0.0.0:$PORT`.
+5. Attach a persistent volume (or migrate to Postgres) so the database files survive restarts.
+6. Deploy and share the HTTPS URL the platform provides.
 
 ## Database Schema
 
@@ -183,6 +210,28 @@ cmsc128-IndivProject_Melchor/
 - `POST /collab_lists/<id>/members` - Add member to list
 - `DELETE /collab_lists/<id>/members/<member_id>` - Remove member from list
 
+### Example API calls
+
+```bash
+# Login and save the session cookie
+curl -X POST http://localhost:5002/auth/login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{"username": "demo", "password": "demo123"}'
+
+# Create a task (authenticated)
+curl -X POST http://localhost:5002/tasks \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"title": "New API task", "priority": "High"}'
+
+# Fetch tasks for a collaborative list
+curl -X GET "http://localhost:5002/tasks?collab_list_id=1" \
+  -b cookies.txt
+```
+
+The `-c`/`-b` options persist the Flask session cookie across requests so you can script the API easily.
+
 ## Usage
 
 ### Creating Tasks
@@ -235,7 +284,7 @@ The application follows a **3-layer architecture**:
 
 ## Development Notes
 
-- The application runs on port **5002** by default
+- The application runs on port **5002** by default (override with `--port`)
 - Debug mode is enabled in `app.py` (change for production)
 - Database files are created automatically on first run
 - All routes except `/` and `/auth/*` require authentication

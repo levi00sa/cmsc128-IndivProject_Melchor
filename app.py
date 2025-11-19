@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, redirect, url_for
+from flask import Flask, render_template, session, redirect, url_for, request
 from flask_cors import CORS
 from routes.auth_routes import auth_bp
 from routes.task_routes import task_bp
@@ -21,6 +21,19 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(task_bp)
 app.register_blueprint(collab_bp)
 
+PROTECTED_PATHS = ('/my-tasks', '/tasks', '/collab_lists', '/auth/logout')
+
+
+@app.after_request
+def add_no_cache_headers(response):
+    """Prevent browsers from caching authenticated pages so sessions remain consistent."""
+    if session.get('user_id'):
+        if any(request.path.startswith(path) for path in PROTECTED_PATHS):
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+    return response
+
 @app.route('/')
 def home():
     if 'user_id' in session:
@@ -28,4 +41,4 @@ def home():
     return render_template('base.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5002)
+    app.run(debug=True, host='0.0.0.0', port=5002)
