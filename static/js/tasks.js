@@ -712,14 +712,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             card.addEventListener("dragstart", (e) => {
-                const taskId = card.dataset.taskId;
+                const taskId = card.dataset.taskId;                        
                 if (!taskId) {
                     console.error("Card missing task ID:", card);
                     e.preventDefault();
                     return;
                 }
 
-                // Store task ID in dataTransfer
+                // Store task ID in dataTransfer for retrieval on drop
                 try {
                     e.dataTransfer.effectAllowed = "move";
                     e.dataTransfer.setData("text/plain", taskId);
@@ -728,7 +728,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.warn("Error setting drag data:", err);
                 }
                 
-                card.classList.add("dragging");
+                card.classList.add("dragging"); //draggging class for visual feedback
                 
                 // Store current status for later comparison
                 const currentTask = allTasks.find(t => t.id.toString() === taskId);
