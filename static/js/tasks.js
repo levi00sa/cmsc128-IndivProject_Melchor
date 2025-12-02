@@ -39,6 +39,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const boardLoadingState = document.getElementById("board-loading-state");
     const boardLoadingMessage = document.getElementById("board-loading-message");
 
+    let activeCollabListId = null;
+    let activeCollabListName = null;
+    let activeCollabListOwnerId = null;
+
     let allTasks = [];
     let deletedTaskBackup = null;
     let undoTimer = null;
@@ -165,21 +169,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    function updateCollabContext(list) {
-        if (!list) {
-            collabListInfo.style.display = 'none';
-            collabOwnerBadge.textContent = '';
-            collabMemberCount.textContent = '';
-            collabListName.textContent = '';
-            return;
-        }
-        collabListName.textContent = list.name;
-        collabOwnerBadge.textContent = list.is_owner ? 'You own this list' : `Owner: ${list.owner_name || 'Unknown'}`;
-        const members = list.member_count || 0;
-        collabMemberCount.textContent = `${members} member${members === 1 ? '' : 's'}`;
-        collabListInfo.style.display = 'flex';
-    }
-
     function setBoardLoading(active, message) {
         if (!boardLoadingState) return;
         if (active) {
@@ -229,6 +218,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 const activeList = collabLists.find(l => l.id === currentListId);
                 updateCollabContext(activeList || null);
+
+                const editBtn = document.getElementById("edit-collab-btn");
+                const deleteBtn = document.getElementById("delete-collab-btn");
+            
+                editBtn.onclick = () => startEditCollabList(activeCollabListId, activeCollabListName);
+                deleteBtn.onclick = () => deleteCollabList(activeCollabListId);
             }
         } catch (err) {
             console.error('Error loading collab lists:', err);
@@ -1049,4 +1044,115 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 3000);
     }
 
+        // Add these handlers to your tasks.js file after the existing modal handlers
+
+    // Get additional DOM elements
+    const editListBtn = document.getElementById('edit-list-btn');
+    const deleteListBtn = document.getElementById('delete-list-btn');
+    const editListModal = document.getElementById('edit-list-modal');
+
+    // Edit list button handler
+    editListBtn.addEventListener('click', () => {
+        if (currentListId) {
+            const list = collabLists.find(l => l.id === currentListId);
+            if (list) {
+                document.getElementById('edit-list-name-input').value = list.name;
+                editListModal.style.display = 'block';
+            }
+        }
+    });
+
+    // Edit list form submission
+    document.getElementById('edit-list-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newName = document.getElementById('edit-list-name-input').value.trim();
+        if (!newName || !currentListId) return;
+
+        try {
+            const res = await fetch(`/collab_lists/${currentListId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            });
+            const result = await res.json();
+            if (result.success) {
+                showToast('List name updated!');
+                editListModal.style.display = 'none';
+                document.getElementById('edit-list-name-input').value = '';
+                await loadCollabLists();
+                // Update the display
+                const updatedList = collabLists.find(l => l.id === currentListId);
+                if (updatedList) {
+                    updateCollabContext(updatedList);
+                }
+            } else {
+                showToast(result.message || 'Failed to update list name', 'error');
+            }
+        } catch (err) {
+            showToast('Error updating list name', 'error');
+            console.error(err);
+        }
+    });
+
+    // Delete list button handler
+    deleteListBtn.addEventListener('click', async () => {
+        if (!currentListId) return;
+        
+        const list = collabLists.find(l => l.id === currentListId);
+        if (!list) return;
+        
+        const confirmMsg = `Are you sure you want to delete "${list.name}"?\n\nThis will permanently delete the list and all its tasks. This action cannot be undone.`;
+        
+        if (!confirm(confirmMsg)) return;
+        
+        try {
+            const res = await fetch(`/collab_lists/${currentListId}`, {
+                method: 'DELETE'
+            });
+            const result = await res.json();
+            if (result.success) {
+                showToast('List deleted successfully!');
+                // Switch back to personal tasks
+                currentListId = null;
+                listSelector.value = 'personal';
+                updateCollabContext(null);
+                await loadCollabLists();
+                await loadTasks();
+            } else {
+                showToast(result.message || 'Failed to delete list', 'error');
+            }
+        } catch (err) {
+            showToast('Error deleting list', 'error');
+            console.error(err);
+        }
+    });
+
+    function updateCollabContext(list) {
+        if (!list) {
+            collabListInfo.style.display = 'none';
+            collabOwnerBadge.textContent = '';
+            collabMemberCount.textContent = '';
+            collabListName.textContent = '';
+            editListBtn.style.display = 'none';
+            deleteListBtn.style.display = 'none';
+            activeCollabListId = null;
+            activeCollabListName = null;
+            return;
+        }
+    
+        activeCollabListId = list.id;
+        activeCollabListName = list.name;
+        activeCollabListOwnerId = list.owner_id;
+    
+        collabListName.textContent = list.name;
+        collabOwnerBadge.textContent = list.is_owner ? 'You own this list' : 'Owner: ' + (list.owner_name || 'Unknown');
+        const members = list.member_count || 0;
+        collabMemberCount.textContent = `${members} member${members === 1 ? '' : 's'}`;
+    
+        collabListInfo.style.display = 'flex';
+    
+        // show/hide buttons based on ownership
+        editListBtn.style.display = list.is_owner ? 'flex' : 'none';
+        deleteListBtn.style.display = list.is_owner ? 'flex' : 'none';
+    }    
 });

@@ -10,6 +10,7 @@ from routes.auth_routes import nocache
 task_bp = Blueprint('task_bp', __name__)
 
 initialize_db()
+
 #Get all tasks for the logged-in user (personal or collaborative)
 @task_bp.route('/tasks', methods=['GET'])
 @login_required
@@ -26,18 +27,17 @@ def get_user_tasks():
     
     if collab_list_id:
         # Get tasks for a specific collaborative list
-        from collab_members import is_user_member
+        from collab_members import is_user_owner, is_user_member
         from collab_lists import get_collab_list_by_id
+        
         collab_list = get_collab_list_by_id(collab_list_id)
         if not collab_list:
             return jsonify({'success': False, 'message': 'List not found'}), 404
         
-        is_owner = collab_list['owner_id'] == user_id
-        is_member = is_user_member(collab_list_id, user_id) if not is_owner else True
-        
-        if not is_owner and not is_member:
-            return jsonify({'success': False, 'message': 'Access denied'}), 403
-        
+        # Check if user has access (is owner or member)
+        if not is_user_owner(collab_list_id, user_id) and not is_user_member(collab_list_id, user_id):
+            return jsonify({'error': 'Unauthorized'}), 403
+                
         from tasks import get_tasks_for_collab_list
         if archived_only:
             # Get only archived tasks
@@ -73,6 +73,7 @@ def get_user_tasks():
         })
     
     return jsonify({'success': True, 'tasks': tasks_list})
+
 #Create a new task (personal or collaborative)
 @task_bp.route('/tasks', methods=['POST'])
 @login_required
@@ -100,16 +101,15 @@ def add_task():
     
     # If collab_list_id is provided, verify user has access
     if collab_list_id:
-        from collab_members import is_user_member
+        from collab_members import is_user_member, is_user_owner
         from collab_lists import get_collab_list_by_id
+        
         collab_list = get_collab_list_by_id(collab_list_id)
         if not collab_list:
             return jsonify({'success': False, 'message': 'List not found'}), 404
         
-        is_owner = collab_list['owner_id'] == user_id
-        is_member = is_user_member(collab_list_id, user_id) if not is_owner else True
-        
-        if not is_owner and not is_member:
+        # Check if user has access (is owner or member)
+        if not is_user_owner(collab_list_id, user_id) and not is_user_member(collab_list_id, user_id):
             return jsonify({'success': False, 'message': 'Access denied'}), 403
     
     try:
@@ -143,12 +143,12 @@ def add_task():
         print(f"Error creating task: {error_msg}")
         print(traceback.format_exc())
         return jsonify({'success': False, 'message': f'Error creating task: {error_msg}'}), 500
+
 #Get a specific task by ID
 @task_bp.route('/tasks/<int:task_id>', methods=['GET'])
 @login_required
 @nocache
 def get_task(task_id):
-
     user_id = session.get('user_id')
     task = get_task_by_id(task_id)
     
@@ -157,13 +157,13 @@ def get_task(task_id):
     
     # Check access: personal task or collaborative task user has access to
     if task['collab_list_id']:
-        from collab_members import is_user_member
+        from collab_members import is_user_member, is_user_owner
         from collab_lists import get_collab_list_by_id
+        
         collab_list = get_collab_list_by_id(task['collab_list_id'])
         if collab_list:
-            is_owner = collab_list['owner_id'] == user_id
-            is_member = is_user_member(task['collab_list_id'], user_id) if not is_owner else True
-            if not is_owner and not is_member:
+            # Check if user has access (is owner or member)
+            if not is_user_owner(task['collab_list_id'], user_id) and not is_user_member(task['collab_list_id'], user_id):
                 return jsonify({'success': False, 'message': 'Access denied'}), 403
     else:
         # Personal task - check ownership
@@ -184,12 +184,12 @@ def get_task(task_id):
             'collab_list_id': task['collab_list_id']
         }
     })
+
 #Update a task
 @task_bp.route('/tasks/<int:task_id>', methods=['PUT'])
 @login_required
 @nocache
 def update_user_task(task_id):
-
     user_id = session.get('user_id')
     data = request.get_json()
     
@@ -200,13 +200,13 @@ def update_user_task(task_id):
     
     # Check access
     if task['collab_list_id']:
-        from collab_members import is_user_member
+        from collab_members import is_user_member, is_user_owner
         from collab_lists import get_collab_list_by_id
+        
         collab_list = get_collab_list_by_id(task['collab_list_id'])
         if collab_list:
-            is_owner = collab_list['owner_id'] == user_id
-            is_member = is_user_member(task['collab_list_id'], user_id) if not is_owner else True
-            if not is_owner and not is_member:
+            # Check if user has access (is owner or member)
+            if not is_user_owner(task['collab_list_id'], user_id) and not is_user_member(task['collab_list_id'], user_id):
                 return jsonify({'success': False, 'message': 'Access denied'}), 403
     else:
         if task['user_id'] != user_id:
@@ -256,12 +256,12 @@ def update_user_task(task_id):
         })
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error updating task: {str(e)}'}), 500
+
 #delete a task
 @task_bp.route('/tasks/<int:task_id>', methods=['DELETE'])
 @login_required
 @nocache
 def delete_user_task(task_id):
-
     user_id = session.get('user_id')
     
     # Check if task exists and user has access
@@ -271,13 +271,13 @@ def delete_user_task(task_id):
     
     # Check access
     if task['collab_list_id']:
-        from collab_members import is_user_member
+        from collab_members import is_user_member, is_user_owner
         from collab_lists import get_collab_list_by_id
+        
         collab_list = get_collab_list_by_id(task['collab_list_id'])
         if collab_list:
-            is_owner = collab_list['owner_id'] == user_id
-            is_member = is_user_member(task['collab_list_id'], user_id) if not is_owner else True
-            if not is_owner and not is_member:
+            # Check if user has access (is owner or member)
+            if not is_user_owner(task['collab_list_id'], user_id) and not is_user_member(task['collab_list_id'], user_id):
                 return jsonify({'success': False, 'message': 'Access denied'}), 403
     else:
         if task['user_id'] != user_id:
@@ -291,6 +291,7 @@ def delete_user_task(task_id):
             return jsonify({'success': False, 'message': 'Failed to delete task'}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error deleting task: {str(e)}'}), 500
+
 #Update only the status of a task
 @task_bp.route('/tasks/<int:task_id>/status', methods=['PUT'])
 @login_required
@@ -310,13 +311,13 @@ def update_task_status(task_id):
     
     # Check access
     if task['collab_list_id']:
-        from collab_members import is_user_member
+        from collab_members import is_user_member, is_user_owner
         from collab_lists import get_collab_list_by_id
+        
         collab_list = get_collab_list_by_id(task['collab_list_id'])
         if collab_list:
-            is_owner = collab_list['owner_id'] == user_id
-            is_member = is_user_member(task['collab_list_id'], user_id) if not is_owner else True
-            if not is_owner and not is_member:
+            # Check if user has access (is owner or member)
+            if not is_user_owner(task['collab_list_id'], user_id) and not is_user_member(task['collab_list_id'], user_id):
                 return jsonify({'success': False, 'message': 'Access denied'}), 403
     else:
         if task['user_id'] != user_id:
@@ -337,12 +338,12 @@ def update_task_status(task_id):
             return jsonify({'success': False, 'message': 'Failed to update status'}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error updating status: {str(e)}'}), 500
+
 #Archive a task
 @task_bp.route('/tasks/<int:task_id>/archive', methods=['POST'])
 @login_required
 @nocache
 def archive_user_task(task_id):
-
     user_id = session.get('user_id')
     
     # Check if task exists and user has access
@@ -352,13 +353,13 @@ def archive_user_task(task_id):
     
     # Check access
     if task['collab_list_id']:
-        from collab_members import is_user_member
+        from collab_members import is_user_member, is_user_owner
         from collab_lists import get_collab_list_by_id
+        
         collab_list = get_collab_list_by_id(task['collab_list_id'])
         if collab_list:
-            is_owner = collab_list['owner_id'] == user_id
-            is_member = is_user_member(task['collab_list_id'], user_id) if not is_owner else True
-            if not is_owner and not is_member:
+            # Check if user has access (is owner or member)
+            if not is_user_owner(task['collab_list_id'], user_id) and not is_user_member(task['collab_list_id'], user_id):
                 return jsonify({'success': False, 'message': 'Access denied'}), 403
     else:
         if task['user_id'] != user_id:
@@ -379,12 +380,12 @@ def archive_user_task(task_id):
             return jsonify({'success': False, 'message': 'Failed to archive task'}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error archiving task: {str(e)}'}), 500
+
 #unarchive
 @task_bp.route('/tasks/<int:task_id>/unarchive', methods=['POST'])
 @login_required
 @nocache
 def unarchive_user_task(task_id):
-
     user_id = session.get('user_id')
     
     # Check if task exists and user has access
@@ -394,13 +395,13 @@ def unarchive_user_task(task_id):
     
     # Check access
     if task['collab_list_id']:
-        from collab_members import is_user_member
+        from collab_members import is_user_member, is_user_owner
         from collab_lists import get_collab_list_by_id
+        
         collab_list = get_collab_list_by_id(task['collab_list_id'])
         if collab_list:
-            is_owner = collab_list['owner_id'] == user_id
-            is_member = is_user_member(task['collab_list_id'], user_id) if not is_owner else True
-            if not is_owner and not is_member:
+            # Check if user has access (is owner or member)
+            if not is_user_owner(task['collab_list_id'], user_id) and not is_user_member(task['collab_list_id'], user_id):
                 return jsonify({'success': False, 'message': 'Access denied'}), 403
     else:
         if task['user_id'] != user_id:

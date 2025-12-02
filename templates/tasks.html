@@ -42,9 +42,18 @@
                             <span id="collab-member-count" class="collab-member-count"></span>
                         </div>
                     </div>
-                    <button id="manage-members-btn" class="manage-members-btn" title="Manage Members">
-                        <i class="fas fa-user-plus"></i> Members
-                    </button>
+                    <div class="collab-list-actions">
+                        <button id="edit-list-btn" class="edit-list-btn" title="Edit List Name" style="display: none;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button id="delete-list-btn" class="delete-list-btn" title="Delete List" style="display: none;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button id="manage-members-btn" class="manage-members-btn" title="Manage Members">
+                            <i class="fas fa-user-plus"></i> Members
+                        </button>
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -67,7 +76,6 @@
         </div>
     </div>
 
-    <!-- MODAL FOR CREATING COLLABORATIVE LIST -->
     <div id="create-collab-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -80,7 +88,18 @@
         </div>
     </div>
 
-    <!-- MODAL FOR MANAGING MEMBERS -->
+    <div id="edit-list-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Edit List Name</h2>
+            <form id="edit-list-form">
+                <label for="edit-list-name">List Name:</label>
+                <input type="text" id="edit-list-name-input" required placeholder="Enter new list name">
+                <button type="submit" class="submit-btn">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
     <div id="manage-members-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -116,7 +135,7 @@
 
         <!-- COMPLETED -->
         <div class="kanban-column">
-            <h2>COMPLETED <span>↑</span></h2>
+            <h2>COMPLETED <span>→</span></h2>
             <div class="kanban-list" id="completed-list"></div>
         </div>
 
