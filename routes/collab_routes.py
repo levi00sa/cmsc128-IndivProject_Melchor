@@ -147,7 +147,7 @@ def get_list(list_id):
     
     # Get members
     members = get_collab_members(list_id)
-    member_ids = [member['user_id'] for member in members]
+    member_ids = members  # members is now a list of user IDs, not database rows
     member_list = []
 
     if member_ids:
