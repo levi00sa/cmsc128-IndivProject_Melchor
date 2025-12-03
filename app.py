@@ -1,4 +1,5 @@
 from flask import Flask, render_template, session, redirect, url_for, request
+from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from routes.auth_routes import auth_bp
 from routes.task_routes import task_bp
@@ -9,6 +10,7 @@ from collab_lists import initialize_db as initialize_collab_lists_db
 from collab_members import initialize_db as initialize_collab_members_db
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 app.secret_key = 'mysupersecretkey'
 CORS(app)
 
