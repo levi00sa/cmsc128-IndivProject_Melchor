@@ -4,10 +4,10 @@ from flask import Blueprint, request, jsonify, session, render_template, make_re
 from flask_bcrypt import Bcrypt
 from database import get_db_connection
 from functools import wraps
+from app import bcrypt 
 import secrets
 
 auth_bp = Blueprint('auth_bp', __name__)
-bcrypt = Bcrypt()
 
 def nocache(view):
     @wraps(view)
