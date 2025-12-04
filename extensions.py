@@ -1,4 +1,4 @@
-//extensions.py
+#extensions.py
 
 from flask_bcrypt import Bcrypt
 
